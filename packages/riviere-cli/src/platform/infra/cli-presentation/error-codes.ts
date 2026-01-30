@@ -1,3 +1,9 @@
+export enum ExitCode {
+  ExtractionFailure = 1,
+  ConfigValidation = 2,
+  RuntimeError = 3,
+}
+
 export enum CliErrorCode {
   GraphNotFound = 'GRAPH_NOT_FOUND',
   ComponentNotFound = 'COMPONENT_NOT_FOUND',

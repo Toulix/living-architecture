@@ -1,4 +1,6 @@
-import { CliErrorCode } from './error-codes'
+import {
+  CliErrorCode, ExitCode 
+} from './error-codes'
 
 describe('CliErrorCode', () => {
   it.each([
@@ -13,5 +15,15 @@ describe('CliErrorCode', () => {
     ['GraphExists', 'GRAPH_EXISTS'],
   ] as const)('defines %s error code with value %s', (member, value) => {
     expect(CliErrorCode[member]).toBe(value)
+  })
+})
+
+describe('ExitCode', () => {
+  it.each([
+    ['ExtractionFailure', 1],
+    ['ConfigValidation', 2],
+    ['RuntimeError', 3],
+  ] as const)('defines %s exit code with value %s', (member, value) => {
+    expect(ExitCode[member]).toBe(value)
   })
 })
