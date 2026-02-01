@@ -19,6 +19,10 @@ This step uses config-driven detection instead of AI. Components are found by sc
 npm install --save-dev @living-architecture/riviere-cli @living-architecture/riviere-extract-conventions
 ```
 
+::: tip AI-Assisted Config Generation
+Use an AI assistant to scan your codebase and generate a starting `extraction.config.yaml`. Prompt the AI to identify architectural components (APIs, use cases, events, etc.) by domain, then suggest detection rules using predicates like `hasDecorator`, `nameEndsWith`, and `hasJSDoc`. Validate the generated config with `npx riviere extract --config extraction.config.yaml --dry-run`.
+:::
+
 ## 3.1 Choose Detection Strategy
 
 Select a detection strategy based on your codebase:
@@ -285,9 +289,84 @@ Validate your config against the schema:
 npx riviere extract --config extraction.config.yaml --validate-only
 ```
 
+## 3.7 Enrich with Metadata
+
+Detection finds components but doesn't capture metadata like HTTP methods, routes, or event names. Add an `extract` block to your detection rule to pull these values from your code.
+
+### Before enrichment (detection only)
+
+```json
+{
+  "type": "api",
+  "name": "createOrder",
+  "domain": "orders",
+  "location": { "file": "src/orders/OrderController.ts", "line": 12 }
+}
+```
+
+### After enrichment (with extract block)
+
+```json
+{
+  "type": "api",
+  "name": "createOrder",
+  "domain": "orders",
+  "location": { "file": "src/orders/OrderController.ts", "line": 12 },
+  "apiType": "REST",
+  "httpMethod": "Post",
+  "path": "/orders"
+}
+```
+
+**Required metadata by component type:**
+
+| Type | Required Fields |
+|------|----------------|
+| `api` | `apiType` |
+| `event` | `eventName` |
+| `eventHandler` | `subscribedEvents` |
+| `domainOp` | `operationName` |
+| `ui` | `route` |
+| `useCase` | *(none)* |
+
+### Example: REST API with full metadata
+
+```yaml
+api:
+  find: "methods"
+  where:
+    inClassWith:
+      hasDecorator:
+        name: "APIContainer"
+        from: "@living-architecture/riviere-extract-conventions"
+  extract:
+    apiType: { literal: "REST" }
+    httpMethod: { fromDecoratorName: true }
+    path: { fromDecoratorArg: { position: 0 } }
+```
+
+This extracts three fields per API component:
+- `apiType` → always `"REST"`
+- `httpMethod` → the decorator name (e.g., `@Get` → `"Get"`)
+- `path` → the first decorator argument (e.g., `@Get("/orders")` → `"/orders"`)
+
+### Example: Events with naming convention
+
+```yaml
+event:
+  find: "classes"
+  where:
+    nameEndsWith:
+      suffix: "Event"
+  extract:
+    eventName: { fromClassName: { transform: { stripSuffix: "Event" } } }
+```
+
+[See all 11 extraction rules →](/reference/extraction-config/extraction-rules)
+
 ## Output
 
-Extraction produces draft components JSON. The graph file (`.riviere/graph.json`) is built in subsequent steps.
+Extraction produces enriched components JSON with metadata fields populated. The graph file (`.riviere/graph.json`) is built in subsequent steps.
 
 ## Next Step
 
