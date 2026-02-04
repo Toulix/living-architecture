@@ -1,6 +1,6 @@
 import type {
   ExtractionConfig, ResolvedExtractionConfig, Module 
-} from './types'
+} from './extraction-config-schema'
 
 export function createModuleWithoutPath(): Omit<Module, 'path'> {
   return {
@@ -10,6 +10,7 @@ export function createModuleWithoutPath(): Omit<Module, 'path'> {
     domainOp: { notUsed: true },
     event: { notUsed: true },
     eventHandler: { notUsed: true },
+    eventPublisher: { notUsed: true },
     ui: { notUsed: true },
   }
 }
@@ -22,6 +23,7 @@ export function createModuleWithoutApi(): Omit<Module, 'api'> {
     domainOp: { notUsed: true },
     event: { notUsed: true },
     eventHandler: { notUsed: true },
+    eventPublisher: { notUsed: true },
     ui: { notUsed: true },
   }
 }
@@ -35,6 +37,7 @@ export function createMinimalModule(): Module {
     domainOp: { notUsed: true },
     event: { notUsed: true },
     eventHandler: { notUsed: true },
+    eventPublisher: { notUsed: true },
     ui: { notUsed: true },
   }
 }
@@ -90,6 +93,7 @@ export function createFullConfig(): ExtractionConfig {
           find: 'classes',
           where: { implementsInterface: { name: 'EventHandler' } },
         },
+        eventPublisher: { notUsed: true },
         ui: { notUsed: true },
       },
     ],

@@ -3,6 +3,7 @@ export {
   DomainOpContainer,
   APIContainer,
   EventHandlerContainer,
+  EventPublisherContainer,
   // Class-as-component decorators
   UseCase,
   Event,
@@ -27,4 +28,5 @@ export type {
   IEventHandler,
   UIPageDef,
   DomainOpContainerDef,
-} from './interfaces'
+  EventPublisherDef,
+} from './component-contracts'
