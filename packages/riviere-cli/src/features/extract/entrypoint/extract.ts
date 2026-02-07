@@ -1,5 +1,4 @@
 import { Command } from 'commander'
-import { Project } from 'ts-morph'
 import {
   extractComponents,
   enrichComponents,
@@ -34,6 +33,7 @@ import {
   formatExtractionStats,
   formatTimingLine,
 } from '../../../platform/infra/cli-presentation/format-extraction-stats'
+import { loadExtractionProject } from '../queries/load-extraction-project'
 
 export function createExtractCommand(): Command {
   return new Command('extract')
@@ -50,6 +50,7 @@ export function createExtractCommand(): Command {
     .option('--format <type>', 'Output format: json (default) or markdown')
     .option('--stats', 'Show extraction statistics on stderr')
     .option('--patterns', 'Enable pattern-based connection detection')
+    .option('--no-ts-config', 'Skip tsconfig.json auto-discovery (disables full type resolution)')
     .action((options: ExtractOptions) => {
       validateFlagCombinations(options)
 
@@ -58,8 +59,7 @@ export function createExtractCommand(): Command {
       } = loadAndValidateConfig(options.config)
       const allSourceFilePaths = resolveSourceFiles(resolvedConfig, configDir)
       const sourceFilePaths = resolveFilteredSourceFiles(allSourceFilePaths, options)
-      const project = new Project()
-      project.addSourceFilesAtPaths(sourceFilePaths)
+      const project = loadExtractionProject(configDir, sourceFilePaths, options.tsConfig === false)
 
       const draftComponents = (() => {
         if (options.enrich === undefined) {

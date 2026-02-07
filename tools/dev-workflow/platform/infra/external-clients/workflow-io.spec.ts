@@ -6,10 +6,10 @@ import { createDefaultWorkflowIO } from './workflow-io'
 
 vi.mock('node:fs', () => ({ writeFileSync: vi.fn() }))
 
-class MockExitSignal extends Error {
+class ProcessExitSignal extends Error {
   constructor() {
     super('process.exit called')
-    this.name = 'MockExitSignal'
+    this.name = 'ProcessExitSignal'
   }
 }
 
@@ -37,11 +37,11 @@ describe('createDefaultWorkflowIO', () => {
 
   it('exit calls process.exit with code', () => {
     const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
-      throw new MockExitSignal()
+      throw new ProcessExitSignal()
     })
     const io = createDefaultWorkflowIO()
 
-    expect(() => io.exit(42)).toThrow(MockExitSignal)
+    expect(() => io.exit(42)).toThrow(ProcessExitSignal)
     expect(mockExit).toHaveBeenCalledWith(42)
     mockExit.mockRestore()
   })

@@ -27,6 +27,7 @@ platform/
     ├── external-clients/  ← third-party service wrappers
     ├── persistence/       ← database clients, connection pools
     ├── http/              ← shared formatters, error handling middleware
+    ├── cli/               ← stdin/stdout utilities, CLI I/O helpers
     ├── messaging/         ← queue clients, event bus
     ├── config/            ← configuration loading
     └── logging/           ← structured logging
@@ -46,7 +47,7 @@ All sub-folders within a feature are optional — include only what the feature 
 
 **domain/** — Business rules with no I/O. Validation, state transitions, invariants, calculations. Never imports from infra/, commands/, queries/, entrypoint/, or shell/.
 
-**infra/** — Feature-specific infrastructure. Repository implementations, response mappers, format adapters, feature-specific middleware. Implements domain contracts.
+**infra/** — Feature-specific infrastructure. Repository implementations, response mappers, format adapters, feature-specific middleware. Implements domain contracts. All code must be in sub-folders — no files at the `infra/` root.
 
 **platform/domain/** — Shared business rules used across features. Depends on nothing.
 
