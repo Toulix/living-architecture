@@ -14,9 +14,21 @@ import {
 } from '../../../platform/__fixtures__/command-test-fixtures'
 import { parseFullExtractionOutput } from '../__fixtures__/extraction-test-fixtures'
 
+vi.mock('../../../platform/infra/git/git-repository-info', () => ({
+  getRepositoryInfo: vi.fn(() => ({
+    name: 'test/repo',
+    owner: 'test',
+    url: 'https://github.com/test/repo.git',
+  })),
+}))
+
 describe('riviere extract --dry-run', () => {
   const ctx: TestContext = createTestContext()
   setupCommandTest(ctx)
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
 
   it('outputs component counts per domain when --dry-run flag provided', async () => {
     const srcDir = join(ctx.testDir, 'src')

@@ -3,12 +3,12 @@ import { join } from 'node:path'
 import {
   describe, it, expect, vi 
 } from 'vitest'
-import { createProgram } from '../../../shell/cli'
 import type { TestContext } from '../../../platform/__fixtures__/command-test-fixtures'
 import {
   createTestContext,
   setupCommandTest,
   parseErrorOutput,
+  parseCommandWithErrorHandling,
 } from '../../../platform/__fixtures__/command-test-fixtures'
 import { CliErrorCode } from '../../../platform/infra/cli-presentation/error-codes'
 import {
@@ -16,6 +16,14 @@ import {
   parseFullExtractionOutput,
   createValidExtractFixture,
 } from '../__fixtures__/extraction-test-fixtures'
+
+vi.mock('../../../platform/infra/git/git-repository-info', () => ({
+  getRepositoryInfo: vi.fn(() => ({
+    name: 'test/repo',
+    owner: 'test',
+    url: 'https://github.com/test/repo.git',
+  })),
+}))
 
 vi.mock('../../../platform/infra/git/git-changed-files', async (importOriginal) => {
   const original =
@@ -60,7 +68,7 @@ describe('riviere extract PR extraction', () => {
       const configPath = await createValidExtractFixture(ctx.testDir)
 
       await expect(
-        createProgram().parseAsync([
+        parseCommandWithErrorHandling([
           'node',
           'riviere',
           'extract',
@@ -79,7 +87,7 @@ describe('riviere extract PR extraction', () => {
       const configPath = await createValidExtractFixture(ctx.testDir)
 
       await expect(
-        createProgram().parseAsync([
+        parseCommandWithErrorHandling([
           'node',
           'riviere',
           'extract',
@@ -104,7 +112,7 @@ describe('riviere extract PR extraction', () => {
       const configPath = await createValidExtractFixture(ctx.testDir)
 
       await expect(
-        createProgram().parseAsync([
+        parseCommandWithErrorHandling([
           'node',
           'riviere',
           'extract',
@@ -124,7 +132,7 @@ describe('riviere extract PR extraction', () => {
       const configPath = await createValidExtractFixture(ctx.testDir)
 
       await expect(
-        createProgram().parseAsync([
+        parseCommandWithErrorHandling([
           'node',
           'riviere',
           'extract',
@@ -150,7 +158,7 @@ describe('riviere extract PR extraction', () => {
       const configPath = await createValidExtractFixture(ctx.testDir)
 
       await expect(
-        createProgram().parseAsync([
+        parseCommandWithErrorHandling([
           'node',
           'riviere',
           'extract',
@@ -169,7 +177,7 @@ describe('riviere extract PR extraction', () => {
       const configPath = await createValidExtractFixture(ctx.testDir)
       const sourceFile = join(ctx.testDir, 'src', 'order-service.ts')
 
-      await createProgram().parseAsync([
+      await parseCommandWithErrorHandling([
         'node',
         'riviere',
         'extract',
@@ -194,7 +202,7 @@ describe('riviere extract PR extraction', () => {
       const outsideFile = join(ctx.testDir, 'outside.ts')
       await writeFile(outsideFile, 'export const x = 1')
 
-      await createProgram().parseAsync([
+      await parseCommandWithErrorHandling([
         'node',
         'riviere',
         'extract',
@@ -213,7 +221,7 @@ describe('riviere extract PR extraction', () => {
       const configPath = await createValidExtractFixture(ctx.testDir)
       const sourceFile = join(ctx.testDir, 'src', 'order-service.ts')
 
-      await createProgram().parseAsync([
+      await parseCommandWithErrorHandling([
         'node',
         'riviere',
         'extract',
@@ -243,7 +251,14 @@ describe('riviere extract PR extraction', () => {
       })
 
       await expect(
-        createProgram().parseAsync(['node', 'riviere', 'extract', '--config', configPath, '--pr']),
+        parseCommandWithErrorHandling([
+          'node',
+          'riviere',
+          'extract',
+          '--config',
+          configPath,
+          '--pr',
+        ]),
       ).rejects.toMatchObject({ exitCode: 3 })
 
       const output = parseErrorOutput(ctx.consoleOutput)
@@ -258,7 +273,7 @@ describe('riviere extract PR extraction', () => {
         warnings: [],
       })
 
-      await createProgram().parseAsync([
+      await parseCommandWithErrorHandling([
         'node',
         'riviere',
         'extract',
@@ -293,7 +308,7 @@ describe('riviere extract PR extraction', () => {
         stderrOutput.push(String(msg))
       })
 
-      await createProgram().parseAsync([
+      await parseCommandWithErrorHandling([
         'node',
         'riviere',
         'extract',
@@ -318,7 +333,7 @@ describe('riviere extract PR extraction', () => {
         warnings: [],
       })
 
-      await createProgram().parseAsync([
+      await parseCommandWithErrorHandling([
         'node',
         'riviere',
         'extract',

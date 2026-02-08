@@ -25,7 +25,10 @@ class OrderPublisher {
       metadata: {},
     })
 
-    const result = detectPublishConnections(sharedProject, [event, publisher], { strict: false })
+    const result = detectPublishConnections(sharedProject, [event, publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([
       expect.objectContaining({
@@ -59,13 +62,19 @@ class OrderPublisher {
       metadata: {},
     })
 
-    const result = detectPublishConnections(sharedProject, [event1, event2, publisher], {strict: false,})
+    const result = detectPublishConnections(sharedProject, [event1, event2, publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toHaveLength(2)
   })
 
   it('returns empty array when components list is empty', () => {
-    const result = detectPublishConnections(sharedProject, [], { strict: false })
+    const result = detectPublishConnections(sharedProject, [], {
+      strict: false,
+      repository: 'test-repo',
+    })
     expect(result).toStrictEqual([])
   })
 
@@ -75,7 +84,10 @@ class OrderPublisher {
       metadata: { eventName: 'SomeEvent' },
     })
 
-    const result = detectPublishConnections(sharedProject, [event], { strict: false })
+    const result = detectPublishConnections(sharedProject, [event], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([])
   })
@@ -93,7 +105,10 @@ class MetaEvent {}
       metadata: { publishedEventType: 'MetaEvent' },
     })
 
-    const result = detectPublishConnections(sharedProject, [event, publisher], { strict: false })
+    const result = detectPublishConnections(sharedProject, [event, publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([
       expect.objectContaining({
@@ -110,9 +125,12 @@ class MetaEvent {}
       metadata: { publishedEventType: 'NonExistentEvent' },
     })
 
-    expect(() => detectPublishConnections(sharedProject, [publisher], { strict: true })).toThrow(
-      ConnectionDetectionError,
-    )
+    expect(() =>
+      detectPublishConnections(sharedProject, [publisher], {
+        strict: true,
+        repository: 'test-repo',
+      }),
+    ).toThrow(ConnectionDetectionError)
   })
 
   it('returns uncertain link in lenient mode when metadata publishedEventType matches no Event', () => {
@@ -121,7 +139,10 @@ class MetaEvent {}
       metadata: { publishedEventType: 'MissingEvent' },
     })
 
-    const result = detectPublishConnections(sharedProject, [publisher], { strict: false })
+    const result = detectPublishConnections(sharedProject, [publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([
       expect.objectContaining({
@@ -148,7 +169,10 @@ class MetaEvent {}
     })
 
     expect(() =>
-      detectPublishConnections(sharedProject, [event1, event2, publisher], { strict: true }),
+      detectPublishConnections(sharedProject, [event1, event2, publisher], {
+        strict: true,
+        repository: 'test-repo',
+      }),
     ).toThrow(ConnectionDetectionError)
   })
 
@@ -166,7 +190,10 @@ class MetaEvent {}
       metadata: { publishedEventType: 'SharedLenientMeta' },
     })
 
-    const result = detectPublishConnections(sharedProject, [event1, event2, publisher], {strict: false,})
+    const result = detectPublishConnections(sharedProject, [event1, event2, publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([
       expect.objectContaining({
@@ -187,7 +214,10 @@ class EmptyPublisher {}
       metadata: {},
     })
 
-    const result = detectPublishConnections(sharedProject, [publisher], { strict: false })
+    const result = detectPublishConnections(sharedProject, [publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([])
   })
@@ -205,9 +235,12 @@ class StrictPublisher {
       metadata: {},
     })
 
-    expect(() => detectPublishConnections(sharedProject, [publisher], { strict: true })).toThrow(
-      ConnectionDetectionError,
-    )
+    expect(() =>
+      detectPublishConnections(sharedProject, [publisher], {
+        strict: true,
+        repository: 'test-repo',
+      }),
+    ).toThrow(ConnectionDetectionError)
   })
 
   it('returns uncertain link in lenient mode when parameter type matches no Event', () => {
@@ -223,7 +256,10 @@ class LenientPublisher {
       metadata: {},
     })
 
-    const result = detectPublishConnections(sharedProject, [publisher], { strict: false })
+    const result = detectPublishConnections(sharedProject, [publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([
       expect.objectContaining({
@@ -257,7 +293,10 @@ class AmbiguousPublisher {
     })
 
     expect(() =>
-      detectPublishConnections(sharedProject, [event1, event2, publisher], { strict: true }),
+      detectPublishConnections(sharedProject, [event1, event2, publisher], {
+        strict: true,
+        repository: 'test-repo',
+      }),
     ).toThrow(ConnectionDetectionError)
   })
 
@@ -282,7 +321,10 @@ class AmbigPublisher {
       metadata: {},
     })
 
-    const result = detectPublishConnections(sharedProject, [event1, event2, publisher], {strict: false,})
+    const result = detectPublishConnections(sharedProject, [event1, event2, publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([
       expect.objectContaining({
@@ -311,7 +353,10 @@ class LocPublisher {
       metadata: {},
     })
 
-    const result = detectPublishConnections(sharedProject, [event, publisher], { strict: false })
+    const result = detectPublishConnections(sharedProject, [event, publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result[0]?.sourceLocation).toStrictEqual(
       expect.objectContaining({
@@ -338,7 +383,10 @@ class CasePublisher {
       metadata: {},
     })
 
-    const result = detectPublishConnections(sharedProject, [event, publisher], { strict: false })
+    const result = detectPublishConnections(sharedProject, [event, publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([
       expect.objectContaining({ _uncertain: expect.stringContaining('orderplaced') }),
@@ -351,7 +399,10 @@ class CasePublisher {
       metadata: {},
     })
 
-    const result = detectPublishConnections(sharedProject, [publisher], { strict: false })
+    const result = detectPublishConnections(sharedProject, [publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([])
   })
@@ -367,7 +418,10 @@ class NoParamPublisher {
       metadata: {},
     })
 
-    const result = detectPublishConnections(sharedProject, [publisher], { strict: false })
+    const result = detectPublishConnections(sharedProject, [publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([])
   })
@@ -389,7 +443,10 @@ class MultiParamPublisher {
       metadata: {},
     })
 
-    const result = detectPublishConnections(sharedProject, [event, publisher], { strict: false })
+    const result = detectPublishConnections(sharedProject, [event, publisher], {
+      strict: false,
+      repository: 'test-repo',
+    })
 
     expect(result).toStrictEqual([
       expect.objectContaining({

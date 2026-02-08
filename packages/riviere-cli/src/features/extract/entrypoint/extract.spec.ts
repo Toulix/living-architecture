@@ -11,6 +11,7 @@ import {
   createTestContext,
   setupCommandTest,
   parseErrorOutput,
+  parseCommandWithErrorHandling,
 } from '../../../platform/__fixtures__/command-test-fixtures'
 import { CliErrorCode } from '../../../platform/infra/cli-presentation/error-codes'
 import {
@@ -19,7 +20,19 @@ import {
   createValidExtractFixture,
 } from '../__fixtures__/extraction-test-fixtures'
 
+vi.mock('../../../platform/infra/git/git-repository-info', () => ({
+  getRepositoryInfo: vi.fn(() => ({
+    name: 'test/repo',
+    owner: 'test',
+    url: 'https://github.com/test/repo.git',
+  })),
+}))
+
 describe('riviere extract', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
   describe('command registration', () => {
     it('registers extract command at top level', () => {
       const program = createProgram()
@@ -34,7 +47,7 @@ describe('riviere extract', () => {
 
     it('returns error when config file does not exist', async () => {
       await expect(
-        createProgram().parseAsync([
+        parseCommandWithErrorHandling([
           'node',
           'riviere',
           'extract',
@@ -54,7 +67,7 @@ describe('riviere extract', () => {
       await writeFile(configPath, 'invalid: yaml: content: [')
 
       await expect(
-        createProgram().parseAsync(['node', 'riviere', 'extract', '--config', configPath]),
+        parseCommandWithErrorHandling(['node', 'riviere', 'extract', '--config', configPath]),
       ).rejects.toMatchObject({ exitCode: 2 })
 
       const output = parseErrorOutput(ctx.consoleOutput)
@@ -67,7 +80,7 @@ describe('riviere extract', () => {
       await writeFile(configPath, 'modules: "not an array"')
 
       await expect(
-        createProgram().parseAsync(['node', 'riviere', 'extract', '--config', configPath]),
+        parseCommandWithErrorHandling(['node', 'riviere', 'extract', '--config', configPath]),
       ).rejects.toMatchObject({ exitCode: 2 })
 
       const output = parseErrorOutput(ctx.consoleOutput)
@@ -95,7 +108,7 @@ modules:
       )
 
       await expect(
-        createProgram().parseAsync(['node', 'riviere', 'extract', '--config', configPath]),
+        parseCommandWithErrorHandling(['node', 'riviere', 'extract', '--config', configPath]),
       ).rejects.toMatchObject({ exitCode: 2 })
 
       const output = parseErrorOutput(ctx.consoleOutput)
@@ -155,7 +168,7 @@ modules:
 `,
       )
 
-      await createProgram().parseAsync(['node', 'riviere', 'extract', '--config', configPath])
+      await parseCommandWithErrorHandling(['node', 'riviere', 'extract', '--config', configPath])
 
       const output = parseFullExtractionOutput(ctx.consoleOutput)
       expect(output.success).toBe(true)
@@ -178,7 +191,7 @@ modules:
       )
 
       await expect(
-        createProgram().parseAsync(['node', 'riviere', 'extract', '--config', configPath]),
+        parseCommandWithErrorHandling(['node', 'riviere', 'extract', '--config', configPath]),
       ).rejects.toMatchObject({ exitCode: 2 })
 
       const output = parseErrorOutput(ctx.consoleOutput)
@@ -204,7 +217,7 @@ modules:
       )
 
       await expect(
-        createProgram().parseAsync(['node', 'riviere', 'extract', '--config', configPath]),
+        parseCommandWithErrorHandling(['node', 'riviere', 'extract', '--config', configPath]),
       ).rejects.toMatchObject({ exitCode: 2 })
 
       const output = parseErrorOutput(ctx.consoleOutput)
@@ -220,7 +233,7 @@ modules:
     it('extracts components from source files and outputs JSON', async () => {
       const configPath = await createValidExtractFixture(ctx.testDir)
 
-      await createProgram().parseAsync(['node', 'riviere', 'extract', '--config', configPath])
+      await parseCommandWithErrorHandling(['node', 'riviere', 'extract', '--config', configPath])
 
       const output = parseFullExtractionOutput(ctx.consoleOutput)
       expect(output.success).toBe(true)
@@ -242,7 +255,7 @@ modules:
       const configPath = await createValidExtractFixture(ctx.testDir)
       const outputPath = join(ctx.testDir, 'output.json')
 
-      await createProgram().parseAsync([
+      await parseCommandWithErrorHandling([
         'node',
         'riviere',
         'extract',
@@ -274,7 +287,7 @@ modules:
       const configPath = await createValidExtractFixture(ctx.testDir)
 
       await expect(
-        createProgram().parseAsync([
+        parseCommandWithErrorHandling([
           'node',
           'riviere',
           'extract',
@@ -298,7 +311,7 @@ modules:
     it('outputs only component identity fields when --components-only provided', async () => {
       const configPath = await createValidExtractFixture(ctx.testDir)
 
-      await createProgram().parseAsync([
+      await parseCommandWithErrorHandling([
         'node',
         'riviere',
         'extract',
@@ -321,7 +334,7 @@ modules:
       const configPath = await createValidExtractFixture(ctx.testDir)
 
       await expect(
-        createProgram().parseAsync([
+        parseCommandWithErrorHandling([
           'node',
           'riviere',
           'extract',

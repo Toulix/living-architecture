@@ -1,31 +1,26 @@
 import {
   describe, it, expect 
 } from 'vitest'
-import {
-  Project, ScriptTarget, ModuleKind 
-} from 'ts-morph'
 import { detectConnections } from './detect-connections'
 import { buildComponent } from './call-graph/call-graph-fixtures'
 import { matchesGlob } from '../../../../platform/infra/glob-matching/minimatch-glob'
 import { ConnectionDetectionError } from './connection-detection-error'
-
-function createProject(): Project {
-  return new Project({
-    useInMemoryFileSystem: true,
-    compilerOptions: {
-      strict: true,
-      target: ScriptTarget.ESNext,
-      module: ModuleKind.ESNext,
-    },
-  })
-}
+import { createProject } from './detect-connections-fixtures'
 
 describe('detectConnections', () => {
   it('returns empty links for empty components array', () => {
     const project = createProject()
     project.createSourceFile('/src/empty.ts', '')
 
-    const result = detectConnections(project, [], { moduleGlobs: ['/src/**/*.ts'] }, matchesGlob)
+    const result = detectConnections(
+      project,
+      [],
+      {
+        repository: 'test-repo',
+        moduleGlobs: ['/src/**/*.ts'],
+      },
+      matchesGlob,
+    )
 
     expect(result.links).toStrictEqual([])
   })
@@ -34,7 +29,15 @@ describe('detectConnections', () => {
     const project = createProject()
     project.createSourceFile('/src/timing.ts', '')
 
-    const result = detectConnections(project, [], { moduleGlobs: ['/src/**/*.ts'] }, matchesGlob)
+    const result = detectConnections(
+      project,
+      [],
+      {
+        repository: 'test-repo',
+        moduleGlobs: ['/src/**/*.ts'],
+      },
+      matchesGlob,
+    )
 
     expect(result.timings.callGraphMs).toBeGreaterThanOrEqual(0)
     expect(result.timings.asyncDetectionMs).toBeGreaterThanOrEqual(0)
@@ -67,7 +70,10 @@ class PlaceOrder {
     const result = detectConnections(
       project,
       [repo, useCase],
-      { moduleGlobs: ['/src/**/*.ts'] },
+      {
+        repository: 'test-repo',
+        moduleGlobs: ['/src/**/*.ts'],
+      },
       matchesGlob,
     )
 
@@ -113,7 +119,10 @@ class PublishEvent {
     const result = detectConnections(
       project,
       [store, useCase],
-      { moduleGlobs: ['/src/**/*.ts'] },
+      {
+        repository: 'test-repo',
+        moduleGlobs: ['/src/**/*.ts'],
+      },
       matchesGlob,
     )
 
@@ -141,7 +150,15 @@ class StrictComp {
     const comp = buildComponent('StrictComp', '/src/strict.ts', 2)
 
     expect(() =>
-      detectConnections(project, [comp], { moduleGlobs: ['/src/**/*.ts'] }, matchesGlob),
+      detectConnections(
+        project,
+        [comp],
+        {
+          repository: 'test-repo',
+          moduleGlobs: ['/src/**/*.ts'],
+        },
+        matchesGlob,
+      ),
     ).toThrow(ConnectionDetectionError)
   })
 
@@ -166,6 +183,7 @@ class LenientComp {
       {
         allowIncomplete: true,
         moduleGlobs: ['/src/**/*.ts'],
+        repository: 'test-repo',
       },
       matchesGlob,
     )
@@ -203,7 +221,10 @@ class ServiceA {
     const result = detectConnections(
       project,
       [compA, compB],
-      { moduleGlobs: ['/src/**/*.ts'] },
+      {
+        repository: 'test-repo',
+        moduleGlobs: ['/src/**/*.ts'],
+      },
       matchesGlob,
     )
 
@@ -247,7 +268,10 @@ class OrderPublisher {
     const result = detectConnections(
       project,
       [event, publisher, handler],
-      { moduleGlobs: ['/src/**/*.ts'] },
+      {
+        repository: 'test-repo',
+        moduleGlobs: ['/src/**/*.ts'],
+      },
       matchesGlob,
     )
 
@@ -312,7 +336,10 @@ class PaymentGateway {
     const result = detectConnections(
       project,
       [gateway, processPayment],
-      { moduleGlobs: ['/src/modules/ordering/**/*.ts'] },
+      {
+        repository: 'test-repo',
+        moduleGlobs: ['/src/modules/ordering/**/*.ts'],
+      },
       matchesGlob,
     )
 

@@ -1,5 +1,5 @@
 import type { Project } from 'ts-morph'
-import { createConfiguredProject } from '../infra/ts-morph/create-configured-project'
+import { createConfiguredProject } from './ts-morph/create-configured-project'
 
 export function loadExtractionProject(
   configDir: string,

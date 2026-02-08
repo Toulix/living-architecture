@@ -17,7 +17,6 @@ describe('push-reflection CLI entrypoint', () => {
     vi.resetAllMocks()
     vi.resetModules()
     vi.spyOn(console, 'log').mockImplementation(noop)
-    process.exitCode = undefined
   })
 
   afterEach(() => {

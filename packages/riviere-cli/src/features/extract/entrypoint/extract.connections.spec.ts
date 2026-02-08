@@ -13,6 +13,14 @@ import {
   createValidExtractFixture,
 } from '../__fixtures__/extraction-test-fixtures'
 
+vi.mock('../../../platform/infra/git/git-repository-info', () => ({
+  getRepositoryInfo: vi.fn(() => ({
+    name: 'test/repo',
+    owner: 'test',
+    url: 'https://github.com/test/repo.git',
+  })),
+}))
+
 describe('riviere extract — connection detection', () => {
   afterEach(() => vi.restoreAllMocks())
 
@@ -95,13 +103,20 @@ describe('riviere extract — connection detection', () => {
     const ctx: TestContext = createTestContext()
     setupCommandTest(ctx)
 
-    it('outputs timing line to stderr', async () => {
+    it('outputs timing line to stderr when --stats provided', async () => {
       const stderrOutput: string[] = []
       vi.spyOn(console, 'error').mockImplementation((msg: string) => stderrOutput.push(msg))
 
       const configPath = await createValidExtractFixture(ctx.testDir)
 
-      await createProgram().parseAsync(['node', 'riviere', 'extract', '--config', configPath])
+      await createProgram().parseAsync([
+        'node',
+        'riviere',
+        'extract',
+        '--config',
+        configPath,
+        '--stats',
+      ])
 
       expect(stderrOutput.some((line) => line.startsWith('Extraction completed in'))).toBe(true)
     })

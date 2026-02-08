@@ -18,9 +18,10 @@ export function detectPublishConnections(
 ): ExtractedLink[] {
   const publishers = components.filter((c) => c.type === 'eventPublisher')
   const events = components.filter((c) => c.type === 'event')
+  const repository = options.repository
 
   return publishers.flatMap((publisher) =>
-    extractPublisherLinks(project, publisher, events, options),
+    extractPublisherLinks(project, publisher, events, options, repository),
   )
 }
 
@@ -29,11 +30,12 @@ function extractPublisherLinks(
   publisher: EnrichedComponent,
   events: readonly EnrichedComponent[],
   options: AsyncDetectionOptions,
+  repository: string,
 ): ExtractedLink[] {
   const publishedEventType = publisher.metadata['publishedEventType']
   if (typeof publishedEventType === 'string') {
     const sourceLocation: RequiredLineLocation = {
-      repository: '',
+      repository,
       filePath: publisher.location.file,
       lineNumber: publisher.location.line,
     }
@@ -56,7 +58,7 @@ function extractPublisherLinks(
     const paramTypeName = stripGenericArgs(paramType.getText(firstParam))
 
     const sourceLocation: RequiredLineLocation = {
-      repository: '',
+      repository,
       filePath: publisher.location.file,
       lineNumber: method.getStartLineNumber(),
     }
