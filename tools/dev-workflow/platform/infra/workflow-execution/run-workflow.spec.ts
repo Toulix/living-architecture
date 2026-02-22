@@ -7,16 +7,14 @@ const { mockHandleError } = vi.hoisted(() => ({ mockHandleError: vi.fn() }))
 
 vi.mock('./error-handler', () => ({ handleWorkflowError: mockHandleError }))
 
-import {
-  runWorkflow, formatTimingsMarkdown 
-} from './run-workflow'
+import { runWorkflow } from './run-workflow'
 import {
   success, failure 
-} from './step-result'
+} from '../../domain/workflow-execution/step-result'
 import type {
   BaseContext, Step 
-} from './workflow-runner'
-import type { WorkflowIO } from '../workflow-io'
+} from '../../domain/workflow-execution/workflow-runner'
+import type { WorkflowIO } from '../../domain/workflow-io'
 
 class TestExitSignal extends Error {
   constructor() {
@@ -110,7 +108,7 @@ describe('runWorkflow', () => {
     })
   })
 
-  it('runs workflow and exits with 1 on failure', async () => {
+  it('exits with 0 even on workflow failure (result communicated via JSON)', async () => {
     const mockIO = createMockIO()
     const steps: Step<BaseContext>[] = [
       {
@@ -123,7 +121,7 @@ describe('runWorkflow', () => {
     runWorkflow(steps, buildContext, undefined, { io: mockIO })
 
     await vi.waitFor(() => {
-      expect(mockIO.exitCode).toBe(1)
+      expect(mockIO.exitCode).toBe(0)
     })
   })
 
@@ -199,7 +197,7 @@ describe('runWorkflow', () => {
     runWorkflow(steps, buildContext, undefined, { io: mockIO })
 
     await vi.waitFor(() => {
-      expect(mockHandleError).toHaveBeenCalledWith(expect.any(ContextBuildError))
+      expect(mockHandleError).toHaveBeenCalledWith(expect.any(ContextBuildError), undefined)
     })
   })
 
@@ -244,11 +242,89 @@ describe('runWorkflow', () => {
     })
   })
 
-  it('uses default IO when io option not provided', async () => {
-    const mockLog = vi.spyOn(console, 'log').mockImplementation(vi.fn())
-    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
-      throw new TestExitSignal()
+  it('writes output file when resolveOutputFilePath provided', async () => {
+    const mockIO = createMockIO()
+    const steps: Step<BaseContext>[] = [
+      {
+        name: 'step1',
+        execute: async () => success({ data: 'result' }),
+      },
+    ]
+    const buildContext = async () => ({ branch: 'test' })
+
+    runWorkflow(steps, buildContext, undefined, {
+      resolveOutputFilePath: () => 'reviews/test/output.json',
+      io: mockIO,
     })
+
+    await vi.waitFor(() => {
+      const outputWrite = mockIO.writeFileCalls.find((c) => c.path.endsWith('output.json'))
+      expect(outputWrite).toBeTruthy()
+      expect(JSON.parse(outputWrite?.content ?? '{}')).toMatchObject({ data: 'result' })
+    })
+  })
+
+  it('does not write output file when resolveOutputFilePath omitted', async () => {
+    const mockIO = createMockIO()
+    const steps: Step<BaseContext>[] = [
+      {
+        name: 'step1',
+        execute: async () => success(),
+      },
+    ]
+    const buildContext = async () => ({ branch: 'test' })
+
+    runWorkflow(steps, buildContext, undefined, { io: mockIO })
+
+    await vi.waitFor(() => {
+      expect(mockIO.writeFileCalls.filter((c) => c.path.endsWith('output.json'))).toHaveLength(0)
+    })
+  })
+
+  it('passes errorOutputFilePath to error handler when context builder throws', async () => {
+    const mockIO = createMockIO()
+    const steps: Step<BaseContext>[] = []
+    const buildContext = async () => {
+      throw new ContextBuildError()
+    }
+
+    runWorkflow(steps, buildContext, undefined, {
+      errorOutputFilePath: 'reviews/error-output.json',
+      io: mockIO,
+    })
+
+    await vi.waitFor(() => {
+      expect(mockHandleError).toHaveBeenCalledWith(
+        expect.any(ContextBuildError),
+        'reviews/error-output.json',
+      )
+    })
+  })
+
+  it('uses default IO when io option not provided', async () => {
+    const originalExit = process.exit
+    const originalWrite = process.stdout.write
+    const mockExit = vi.fn()
+    const mockWrite = vi.fn(
+      (
+        _data: string | Uint8Array,
+        encodingOrCb?: BufferEncoding | ((error?: Error | null) => void),
+        cb?: (error?: Error | null) => void,
+      ): boolean => {
+        const callback = typeof encodingOrCb === 'function' ? encodingOrCb : cb
+        if (callback) callback()
+        return true
+      },
+    )
+    Object.defineProperty(process, 'exit', {
+      value: mockExit,
+      configurable: true,
+    })
+    Object.defineProperty(process.stdout, 'write', {
+      value: mockWrite,
+      configurable: true,
+    })
+    const mockLog = vi.spyOn(console, 'log').mockImplementation(vi.fn())
 
     const steps: Step<BaseContext>[] = [
       {
@@ -265,15 +341,41 @@ describe('runWorkflow', () => {
       expect(mockExit).toHaveBeenCalledWith(0)
     })
 
+    Object.defineProperty(process, 'exit', {
+      value: originalExit,
+      configurable: true,
+    })
+    Object.defineProperty(process.stdout, 'write', {
+      value: originalWrite,
+      configurable: true,
+    })
     mockLog.mockRestore()
-    mockExit.mockRestore()
   })
 
   it('uses default IO writeFile (noop) when resolveTimingsFilePath provided without io', async () => {
-    const mockLog = vi.spyOn(console, 'log').mockImplementation(vi.fn())
-    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {
-      throw new TestExitSignal()
+    const originalExit = process.exit
+    const originalWrite = process.stdout.write
+    const mockExit = vi.fn()
+    const mockWrite = vi.fn(
+      (
+        _data: string | Uint8Array,
+        encodingOrCb?: BufferEncoding | ((error?: Error | null) => void),
+        cb?: (error?: Error | null) => void,
+      ): boolean => {
+        const callback = typeof encodingOrCb === 'function' ? encodingOrCb : cb
+        if (callback) callback()
+        return true
+      },
+    )
+    Object.defineProperty(process, 'exit', {
+      value: mockExit,
+      configurable: true,
     })
+    Object.defineProperty(process.stdout, 'write', {
+      value: mockWrite,
+      configurable: true,
+    })
+    const mockLog = vi.spyOn(console, 'log').mockImplementation(vi.fn())
 
     const steps: Step<BaseContext>[] = [
       {
@@ -289,44 +391,14 @@ describe('runWorkflow', () => {
       expect(mockExit).toHaveBeenCalledWith(0)
     })
 
+    Object.defineProperty(process, 'exit', {
+      value: originalExit,
+      configurable: true,
+    })
+    Object.defineProperty(process.stdout, 'write', {
+      value: originalWrite,
+      configurable: true,
+    })
     mockLog.mockRestore()
-    mockExit.mockRestore()
-  })
-})
-
-describe('formatTimingsMarkdown', () => {
-  it('formats step timings as markdown table', () => {
-    const result = formatTimingsMarkdown(
-      [
-        {
-          name: 'verify-build',
-          durationMs: 45200,
-        },
-        {
-          name: 'code-review',
-          durationMs: 38700,
-        },
-      ],
-      83900,
-    )
-
-    expect(result).toContain('| verify-build | 45.2s |')
-    expect(result).toContain('| code-review | 38.7s |')
-    expect(result).toContain('**Total: 83.9s**')
-  })
-
-  it('formats sub-second durations in milliseconds', () => {
-    const result = formatTimingsMarkdown(
-      [
-        {
-          name: 'fast-step',
-          durationMs: 42,
-        },
-      ],
-      42,
-    )
-
-    expect(result).toContain('| fast-step | 42ms |')
-    expect(result).toContain('**Total: 42ms**')
   })
 })

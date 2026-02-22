@@ -3,16 +3,18 @@ import {
   type Step,
   type BaseContext,
   type WorkflowResult,
-  type StepTiming,
-} from './workflow-runner'
+} from '../../domain/workflow-execution/workflow-runner'
 import { handleWorkflowError } from './error-handler'
 import {
   type DebugLog, noopDebugLog 
-} from '../debug-log'
-import { type WorkflowIO } from '../workflow-io'
+} from '../../domain/debug-log'
+import { type WorkflowIO } from '../../domain/workflow-io'
+import { formatTimingsMarkdown } from '../cli/format-timings'
 
 export interface WorkflowOptions<T extends BaseContext> {
   resolveTimingsFilePath?: (ctx: T) => string
+  resolveOutputFilePath?: (ctx: T) => string
+  errorOutputFilePath?: string
   debugLog?: DebugLog
   io?: WorkflowIO
 }
@@ -27,7 +29,9 @@ const defaultIO: WorkflowIO = {
     console.log(output)
   },
   exit: (code: number) => {
-    process.exit(code)
+    process.stdout.write('', () => {
+      process.exit(code)
+    })
   },
 }
 
@@ -37,25 +41,28 @@ export function runWorkflow<T extends BaseContext>(
   formatResult?: (result: WorkflowResult, ctx: T) => unknown,
   options?: WorkflowOptions<T>,
 ): void {
-  executeWorkflow(steps, buildContext, formatResult, options).catch(handleWorkflowError)
+  executeWorkflow(steps, buildContext, formatResult, options).catch((error: unknown) => {
+    handleWorkflowError(error, options?.errorOutputFilePath)
+  })
 }
 
-function formatDuration(ms: number): string {
-  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.round(ms)}ms`
-}
+function writeOptionalFiles<T extends BaseContext>(
+  io: WorkflowIO,
+  context: T,
+  result: WorkflowResult,
+  jsonOutput: string,
+  options?: WorkflowOptions<T>,
+): void {
+  if (options?.resolveTimingsFilePath) {
+    const timingsPath = options.resolveTimingsFilePath(context)
+    const markdown = formatTimingsMarkdown(result.stepTimings, result.totalDurationMs)
+    io.writeFile(timingsPath, markdown)
+  }
 
-export function formatTimingsMarkdown(stepTimings: StepTiming[], totalDurationMs: number): string {
-  const lines = [
-    '# Workflow Timing',
-    '',
-    '| Step | Duration |',
-    '|------|----------|',
-    ...stepTimings.map((t) => `| ${t.name} | ${formatDuration(t.durationMs)} |`),
-    '',
-    `**Total: ${formatDuration(totalDurationMs)}**`,
-    '',
-  ]
-  return lines.join('\n')
+  if (options?.resolveOutputFilePath) {
+    const outputPath = options.resolveOutputFilePath(context)
+    io.writeFile(outputPath, jsonOutput)
+  }
 }
 
 async function executeWorkflow<T extends BaseContext>(
@@ -76,16 +83,13 @@ async function executeWorkflow<T extends BaseContext>(
 
   log.log(`workflow complete: success=${result.success}, failedStep=${result.failedStep ?? 'none'}`)
 
-  if (options?.resolveTimingsFilePath) {
-    const timingsPath = options.resolveTimingsFilePath(context)
-    const markdown = formatTimingsMarkdown(result.stepTimings, result.totalDurationMs)
-    io.writeFile(timingsPath, markdown)
-  }
-
   const formatted = formatResult ? formatResult(result, context) : undefined
   const output = formatted ?? result.output ?? result
+  const jsonOutput = JSON.stringify(output, null, 2)
 
-  io.log(JSON.stringify(output, null, 2))
+  writeOptionalFiles(io, context, result, jsonOutput, options)
 
-  io.exit(result.success ? 0 : 1)
+  io.log(jsonOutput)
+
+  io.exit(0)
 }

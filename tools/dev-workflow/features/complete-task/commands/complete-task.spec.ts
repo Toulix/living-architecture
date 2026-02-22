@@ -50,14 +50,14 @@ vi.mock('node:fs/promises', () => ({ mkdir: mockMkdir }))
 vi.mock('../../../platform/infra/external-clients/git-client', () => ({ git: mockGit }))
 vi.mock('../../../platform/infra/external-clients/github-rest-client', () => ({github: mockGitHub,}))
 vi.mock('../../../platform/infra/external-clients/gh-cli', () => ({ ghCli: mockGhCli }))
-vi.mock('../../../platform/domain/workflow-execution/run-workflow', () => ({runWorkflow: mockRunWorkflow,}))
+vi.mock('../../../platform/infra/workflow-execution/run-workflow', () => ({runWorkflow: mockRunWorkflow,}))
 vi.mock('../../../platform/infra/external-clients/cli-args', () => ({ cli: mockCli }))
 vi.mock('../../../platform/infra/external-clients/claude-agent', () => ({ claude: mockClaude }))
 vi.mock('../../../platform/infra/external-clients/nx-runner', () => ({ nx: mockNx }))
 vi.mock('../../../platform/infra/external-clients/github-graphql-client', () => ({fetchRawPRFeedback: mockFetchRawPRFeedback,}))
 
 import {
-  executeCompleteTask, resolveTimingsFilePath 
+  executeCompleteTask, resolveTimingsFilePath, resolveOutputFilePath 
 } from './complete-task'
 
 type ContextBuilder = () => Promise<CompleteTaskContext>
@@ -117,7 +117,11 @@ describe('executeCompleteTask', () => {
       expect.any(Array),
       expect.any(Function),
       expect.any(Function),
-      expect.objectContaining({ resolveTimingsFilePath: expect.any(Function) }),
+      expect.objectContaining({
+        resolveTimingsFilePath: expect.any(Function),
+        resolveOutputFilePath: expect.any(Function),
+        errorOutputFilePath: 'reviews/error-output.json',
+      }),
     )
   })
 
@@ -125,6 +129,12 @@ describe('executeCompleteTask', () => {
     const ctx = buildTestContext()
     const path = resolveTimingsFilePath(ctx)
     expect(path).toBe('reviews/test/timings.md')
+  })
+
+  it('resolves output file path from review directory', () => {
+    const ctx = buildTestContext()
+    const path = resolveOutputFilePath(ctx)
+    expect(path).toBe('reviews/test/output.json')
   })
 
   it('rejects --reject-review-feedback in create mode', () => {
