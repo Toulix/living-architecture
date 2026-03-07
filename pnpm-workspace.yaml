@@ -1,5 +1,9 @@
 packages:
-  - 'packages/*'
-  - 'apps/*'
-  - 'tools/*'
+  - packages/*
+  - apps/*
+  - tools/*
+
 autoInstallPeers: true
+
+onlyBuiltDependencies:
+  - better-sqlite3
